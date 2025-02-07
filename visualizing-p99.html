@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #fff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #chartContainer {
+            width: 80%;
+            max-width: 800px;
+            margin: auto;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chartContainer">
+    <canvas id="latencyChart"></canvas>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('latencyChart').getContext('2d');
+
+        // Generate 1000 data points for each latency level with occasional spikes
+        const generateData = (latency, variance) => {
+            const data = Array.from({ length: 1000 }, (_, i) => {
+                const spike = Math.random() < 0.05 ? latency + Math.random() * variance * 10 : latency + Math.random() * variance;
+                return { x: i, y: spike };
+            });
+            // Calculate p99 latency
+            const sortedData = data.map(point => point.y).sort((a, b) => a - b);
+            const p99 = sortedData[Math.floor(0.99 * sortedData.length)];
+            return { data, p99 };
+        };
+
+        const lowVariance = generateData(0.1, 0.05);
+        const mediumVariance = generateData(0.1, 0.7);
+        const highVariance = generateData(0.1, 2.5);
+
+        const data = {
+            datasets: [
+                {
+                    label: `p99: ${lowVariance.p99.toFixed(2)}ms`,
+                    data: lowVariance.data,
+                    borderColor: '#3DADFF',
+                    backgroundColor: '#3DADFF',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0.1,
+                },
+                {
+                    label: `p99: ${mediumVariance.p99.toFixed(2)}ms`,
+                    data: mediumVariance.data,
+                    borderColor: '#E8A302',
+                    backgroundColor: '#E8A302',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0.1,
+                },
+                {
+                    label: `p99: ${highVariance.p99.toFixed(2)}ms`,
+                    data: highVariance.data,
+                    borderColor: '#F849C1',
+                    backgroundColor: '#F849C1',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0.1,
+                },
+            ]
+        };
+
+        const options = {
+            responsive: true,
+            animation: {
+                duration: 1000,
+                easing: 'linear',
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    display: false,
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    display: true,
+                    min: 0,
+                    title: {
+                        display: true,
+                        text: 'Latency (ms)'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                }
+            }
+        };
+
+        new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: options
+        });
+    });
+</script>
+
+</body>
+</html>
