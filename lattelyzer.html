@@ -13,7 +13,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const files = urlParams.get('files') ? urlParams.get('files').split(',') : ['40000', '80000'];
+        const files = urlParams.get('files') ? urlParams.get('files').split(',') : ['data/runA', 'data/runB'];
         const fetchData = fileName => fetch(`${fileName}.json`).then(response => response.json());
 
         Promise.all(files.map(fetchData))
@@ -24,33 +24,19 @@
                     const fileName = files[index];
                     const timestamps = data.result.log.map(entry => entry.time_s);
                     const percentiles = data.percentiles;
-                    const p50_index = percentiles.indexOf(50);
                     const p99_index = percentiles.indexOf(99);
 
-                    const mean = data.result.log.map(entry => entry.request_latency.mean['value']);
-                    const p50 = data.result.log.map(entry => entry.request_latency.percentiles[p50_index]['value']);
                     const p99 = data.result.log.map(entry => entry.request_latency.percentiles[p99_index]['value']);
+                    const filteredData = timestamps.map((time, i) => ({ time, p99: p99[i] }))
+                        .filter(entry => entry.time >= 60);
+
+                    const filteredTimestamps = filteredData.map(entry => entry.time);
+                    const filteredP99 = filteredData.map(entry => entry.p99);
 
                     datasets.push(
                         {
-                            label: `${fileName} Mean`,
-                            data: mean,
-                            borderWidth: 2,
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.4,
-                        },
-                        {
-                            label: `${fileName} P50`,
-                            data: p50,
-                            borderWidth: 2,
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.4,
-                        },
-                        {
                             label: `${fileName} P99`,
-                            data: p99,
+                            data: filteredP99,
                             borderWidth: 2,
                             fill: false,
                             pointRadius: 0,
@@ -61,7 +47,7 @@
                     if (index === results.length - 1) {  // Ensure we only initialize the chart once after processing all files
                         const ctx = document.getElementById('percentileChart').getContext('2d');
                         const chartData = {
-                            labels: timestamps,
+                            labels: filteredTimestamps,
                             datasets: datasets
                         };
 
