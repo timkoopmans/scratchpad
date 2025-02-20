@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="elementor-shortcode">    <style>
+
+    #chartContainer {
+        width: 100%;
+        max-width: 900px;
+        margin: auto;
+        position: relative;
+    }
+    .fasterContainer {
+        display: flex;
+        width: 100%;
+        padding: 10px 0;
+        justify-content: center;
+        align-items: baseline;
+    }
+    #faster {
+        text-transform: uppercase;
+    }
+    #faster,
+    #fasterText {
+        margin: 0;
+        color: #0F1040;
+        font: 300 28px/1.3 'Roboto', Arial, Helvetica, sans-serif;
+    }
+
+    #fasterText {
+        margin: 0 0 0 6px;
+    }
+    @media screen and (max-width: 768px) {
+        .fasterContainer {
+            flex-wrap: wrap;
+        }
+        #faster {
+            width: 100%;
+            text-align: center;
+        }
+        #fasterText {
+            margin-left: 0;
+            text-align: center;
+        }
+    }
+</style>
+    <div id="chartContainer">
+        <canvas id="lineChart" style="display: block; box-sizing: border-box; height: 450px; width: 900px;" width="1800" height="900"></canvas>
+        <div class="fasterContainer">
+            <div id="faster">7x</div>
+            <div id="fasterText">times faster with ScyllaDB</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+
+            const data = {
+                labels: ['0:100', '10:90', '50:50', '90:10', '100:0'],
+                datasets: [
+                    {
+                        label: 'ScyllaDB',
+                        data: [4.05, 4.29, 4.98, 5.19, 5.35],
+                        borderColor: '#0f1041',
+                        backgroundColor: '#0f1041',
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'DynamoDB',
+                        data: [19.21, 20.00, 20.16, 25.38, 22.11],
+                        borderColor: '#2e6fed',
+                        backgroundColor: '#2e6fed',
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0,
+                    },
+                ]
+            };
+
+            const options = {
+                responsive: true,
+                animation: {
+                    duration: 1000,
+                    easing: 'linear',
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Write:Read Ratio'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'Latency (ms)'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        external: function(context) {
+                            const index = context.tooltip.dataPoints[0].dataIndex;
+                            const scyllaValue = context.chart.data.datasets[0].data[index];
+                            const dynamoValue = context.chart.data.datasets[1].data[index];
+                            const timesFaster = (dynamoValue / scyllaValue).toFixed(0);
+                            document.getElementById('faster').textContent = `${timesFaster}x`;
+                        }
+                    },
+                    crosshair: {
+                        id: 'crosshair',
+                        afterDraw: function(chart) {
+                            if (chart.tooltip._active && chart.tooltip._active.length) {
+                                const ctx = chart.ctx;
+                                const x = chart.tooltip._active[0].element.x;
+                                const topY = chart.scales.y.top;
+                                const bottomY = chart.scales.y.bottom;
+
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.moveTo(x, topY);
+                                ctx.lineTo(x, bottomY);
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = '#000';
+                                ctx.stroke();
+                                ctx.restore();
+                            }
+                        }
+                    }
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: options,
+                plugins: [options.plugins.crosshair]
+            });
+        });
+    </script>
+</div>
+
+
+</body>
+</html>
