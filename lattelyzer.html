@@ -13,33 +13,27 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const fileName = urlParams.get('file') || '40000';
+        const files = urlParams.get('files') ? urlParams.get('files').split(',') : ['40000', '80000'];
+        const fetchData = fileName => fetch(`${fileName}.json`).then(response => response.json());
 
-        fetch(`${fileName}.json`)
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                if (!Array.isArray(data.result.log)) {
-                }
-                const timestamps = data.result.log.map(entry => entry.time_s);
-                const percentiles = data.percentiles;
-                const p50_index = percentiles.indexOf(50);
-                const p99_index = percentiles.indexOf(99);
+        Promise.all(files.map(fetchData))
+            .then(results => {
+                const datasets = [];
 
-                const mean = data.result.log.map(entry => entry.request_latency.mean['value']);
-                const p50 = data.result.log.map(entry => entry.request_latency.percentiles[p50_index]['value']);
-                const p99 = data.result.log.map(entry => entry.request_latency.percentiles[p99_index]['value']);
+                results.forEach((data, index) => {
+                    const fileName = files[index];
+                    const timestamps = data.result.log.map(entry => entry.time_s);
+                    const percentiles = data.percentiles;
+                    const p50_index = percentiles.indexOf(50);
+                    const p99_index = percentiles.indexOf(99);
 
-                const decimation = {
-                    enabled: false,
-                    algorithm: 'min-max',
-                };
-                const ctx = document.getElementById('percentileChart').getContext('2d');
-                const chartData = {
-                    labels: timestamps,
-                    datasets: [
+                    const mean = data.result.log.map(entry => entry.request_latency.mean['value']);
+                    const p50 = data.result.log.map(entry => entry.request_latency.percentiles[p50_index]['value']);
+                    const p99 = data.result.log.map(entry => entry.request_latency.percentiles[p99_index]['value']);
+
+                    datasets.push(
                         {
-                            label: 'Mean',
+                            label: `${fileName} Mean`,
                             data: mean,
                             borderWidth: 2,
                             fill: false,
@@ -47,7 +41,7 @@
                             tension: 0.4,
                         },
                         {
-                            label: 'P50',
+                            label: `${fileName} P50`,
                             data: p50,
                             borderWidth: 2,
                             fill: false,
@@ -55,58 +49,66 @@
                             tension: 0.4,
                         },
                         {
-                            label: 'P99',
+                            label: `${fileName} P99`,
                             data: p99,
                             borderWidth: 2,
                             fill: false,
                             pointRadius: 0,
                             tension: 0.4,
                         }
-                    ]
-                };
+                    );
 
-                const options = {
-                    responsive: true,
-                    animation: {
-                        duration: 1000,
-                        easing: 'linear',
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Time (s)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return Math.round(value);
+                    if (index === results.length - 1) {  // Ensure we only initialize the chart once after processing all files
+                        const ctx = document.getElementById('percentileChart').getContext('2d');
+                        const chartData = {
+                            labels: timestamps,
+                            datasets: datasets
+                        };
+
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: chartData,
+                            options: {
+                                responsive: true,
+                                animation: {
+                                    duration: 1000,
+                                    easing: 'linear',
+                                },
+                                scales: {
+                                    x: {
+                                        display: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Time (s)'
+                                        },
+                                        ticks: {
+                                            callback: function(value) {
+                                                return Math.round(value);
+                                            }
+                                        }
+                                    },
+                                    y: {
+                                        display: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Latency (ms)'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    tooltip: {
+                                        enabled: true,
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
+                                    decimation: {
+                                        enabled: false,
+                                        algorithm: 'min-max',
+                                    },
                                 }
                             }
-
-                        },
-                        y: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Latency (ms)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            enabled: true,
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        decimation: decimation,
+                        });
                     }
-                };
-
-                new Chart(ctx, {
-                    type: 'line',
-                    data: chartData,
-                    options: options
                 });
             })
             .catch(error => console.error('Error fetching data:', error));
