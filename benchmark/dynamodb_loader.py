@@ -2,8 +2,9 @@ import boto3
 import pandas as pd
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 
-# Read the CSV file from https://www.kaggle.com/datasets/waqi786/songs-dataset-2000-2020-50k-records?resource=download
+# Read the CSV file
 df = pd.read_csv('songs_2000_2020_50k.csv')
 
 # Initialize the DynamoDB session
@@ -15,8 +16,9 @@ table = dynamodb.Table('MusicCollection')
 
 # Define the number of iterations for the load test
 num_iterations = 10000
+num_threads = 20
 
-for _ in range(num_iterations):
+def insert_random_song():
     # Select a random row
     random_row = df.sample(n=1).iloc[0]
 
@@ -40,5 +42,13 @@ for _ in range(num_iterations):
 
     # Optional: Add a small delay to avoid overwhelming the database
     time.sleep(0.1)
+
+# Use ThreadPoolExecutor to run the load test concurrently
+with ThreadPoolExecutor(max_workers=num_threads) as executor:
+    futures = [executor.submit(insert_random_song) for _ in range(num_iterations)]
+
+# Wait for all threads to complete
+for future in futures:
+    future.result()
 
 print("Load test completed.")
