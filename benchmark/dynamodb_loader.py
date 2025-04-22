@@ -5,10 +5,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 # Read the CSV file
-df = pd.read_csv('songs_2000_2020_50k.csv')
+df = pd.read_csv('songs.csv')
 
 # Initialize the DynamoDB session
-session = boto3.Session(profile_name='DevOpsAccessRole', region_name='us-east-1')
+session = boto3.Session(region_name='us-east-1')
 dynamodb = session.resource('dynamodb')
 
 # Reference your table
