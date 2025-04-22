@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WCU 24h Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 50px;
+        }
+        #chart-container {
+            width: 80%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+<div id="chart-container">
+    <canvas id="chart"></canvas>
+</div>
+
+<script>
+    const labels = [];
+    for (let i = 0; i < 1440; i++) {
+        const minuteOfDay = (18 * 60 + i) % 1440;
+        const hour = Math.floor(minuteOfDay / 60);
+        const minute = minuteOfDay % 60;
+        const timeLabel = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        labels.push(timeLabel);
+    }
+
+    function generateCapacitySeries({
+                                        shapeFn = null
+                                    } = {}) {
+        const series = [];
+        for (let i = 0; i < 1440; i++) {
+            const minuteOfDay = (18 * 60 + i) % 1440;
+            const seed = i;
+
+            let value = 0;
+
+            value = shapeFn ? shapeFn(minuteOfDay, seed) : 0;
+
+            series.push(Math.round(value));
+        }
+        return series;
+    }
+
+    // Generate data
+    const dataSeries1 = generateCapacitySeries({
+        shapeFn: (minuteOfDay) => {
+            const time = minuteOfDay / 60;
+            const cycles = 2;
+            const min = 100000;
+            const max = 500000;
+            const amplitude = (max - min) / 2;
+            const baseline = min + amplitude;
+            const sineValue = Math.sin((2 * Math.PI * cycles * time) / 24);
+            const noise = Math.sin(minuteOfDay / 2) * 8000 + (Math.random() - 0.5) * 20000;
+            return baseline + amplitude * sineValue + noise;
+        }
+    });
+
+    // Provisioned line: square wave based on specific time-based steps
+    const dataSeries2 = dataSeries1.map((_, i) => {
+        const minuteOfDay = (18 * 60 + i) % 1440;
+        if (minuteOfDay >= 1380 || minuteOfDay < 420) return 550000; // 23:00–06:00
+        if (minuteOfDay >= 420 && minuteOfDay < 700) return 350000;  // 06:00–13:00
+        if (minuteOfDay >= 700 && minuteOfDay < 1080) return 550000; // 13:00–18:00
+        return 350000; // 18:00–23:00
+    });
+
+
+    // Stats
+    const totalOpsSeries1 = dataSeries1.reduce((sum, value) => sum + value, 0);
+    const averageOpsSeries1 = totalOpsSeries1 / dataSeries1.length;
+    const peakOpsSeries1 = Math.max(...dataSeries1);
+    const thresholdOpsSeries1 = peakOpsSeries1 * 0.9;
+    const peakMinutesSeries1 = dataSeries1.filter(v => v >= thresholdOpsSeries1).length;
+    const peakDuationSeries1 = (peakMinutesSeries1 / 60).toFixed(1);
+
+    const totalSeries2 = dataSeries2.reduce((sum, value) => sum + value, 0);
+    const averageSeries2 = totalSeries2 / dataSeries2.length;
+    const peakSeries2 = Math.max(...dataSeries2);
+    const thresholdSeries2 = peakSeries2 * 0.9;
+    const peakMinutesSeries2 = dataSeries2.filter(v => v >= thresholdSeries2).length;
+    const peakDurationSeries2 = (peakMinutesSeries2 / 60).toFixed(1);
+
+    const totalOpsSeries2 = totalSeries2;
+
+    const totalDelta = dataSeries2.reduce((sum, provisioned, i) => sum + (provisioned - dataSeries1[i]), 0);
+    const averageDelta = totalDelta / dataSeries1.length;
+
+    const statsDiv = document.createElement('div');
+    statsDiv.style.padding = '1rem';
+    statsDiv.style.fontFamily = 'Roboto, Arial, sans-serif';
+    statsDiv.innerHTML = `
+  <table style="border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Metric</th>
+        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Reads</th>
+        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Writes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 4px 12px;">Average</td>
+        <td style="padding: 4px 12px;">${Math.round(averageSeries2).toLocaleString()}</td>
+        <td style="padding: 4px 12px;">${Math.round(averageOpsSeries1).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Peak</td>
+        <td style="padding: 4px 12px;">${peakSeries2.toLocaleString()}</td>
+        <td style="padding: 4px 12px;">${peakOpsSeries1.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Peak Duration (≥90%)</td>
+        <td style="padding: 4px 12px;">${peakDurationSeries2} hours</td>
+        <td style="padding: 4px 12px;">${peakDuationSeries1} hours</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Over-Provisioned Total</td>
+        <td style="padding: 4px 12px;" colspan="2">${totalDelta.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Over-Provisioned Average/min</td>
+        <td style="padding: 4px 12px;" colspan="2">${Math.round(averageDelta).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Consumed Total</td>
+        <td style="padding: 4px 12px;" colspan="2">${totalOpsSeries1.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 12px;">Provisioned Total</td>
+        <td style="padding: 4px 12px;" colspan="2">${totalOpsSeries2.toLocaleString()}</td>
+      </tr>
+    </tbody>
+  </table>
+`;
+    document.getElementById('chart-container').insertAdjacentElement('afterend', statsDiv);
+
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Consumed Capacity Units',
+                    data: dataSeries1,
+                    borderColor: '#f57a16',
+                    backgroundColor: '#f57a16',
+                    tension: 0.1,
+                    fill: false,
+                    pointRadius: 0,
+                    borderWidth: 1
+                },
+                {
+                    label: 'Provisioned Capacity Units',
+                    data: dataSeries2,
+                    borderColor: '#2073ad',
+                    backgroundColor: '#2073ad',
+                    tension: 0.1,
+                    fill: false,
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    stepped: 'before',
+                    borderDash: [8, 4]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    align: 'start',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 0,
+                        minRotation: 0,
+                        callback: function(value, index) {
+                            return index % 180 === 0 ? this.getLabelForValue(value) : '';
+                        }
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        display: true,
+                        drawBorder: false,
+                        drawTicks: false,
+                        color: function(context) {
+                            return context.tick.value % 10000 === 0 ? '#e0e0e0' : 'transparent';
+                        }
+                    },
+                    ticks: {
+                        color: '#000',
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            animation: false
+        }
+    });
+</script>
+</body>
+</html>
