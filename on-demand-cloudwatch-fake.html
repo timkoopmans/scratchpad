@@ -8,17 +8,17 @@
   <style>
     body {
       margin: 0;
-      padding: 0;
+      padding: 50px;
     }
     #chart-container {
-      width: 100%;
+      width: 80%;
       height: 400px;
     }
   </style>
 </head>
 <body>
 <div id="chart-container">
-  <canvas id="wcuChart"></canvas>
+  <canvas id="chart"></canvas>
 </div>
 
 <script>
@@ -33,20 +33,18 @@
   }
 
   function generateCapacitySeries({
-    seedOffset = 0,
-    scale = 1.0,
     shapeFn = null
   } = {}) {
     const series = [];
     for (let i = 0; i < 1440; i++) {
       const minuteOfDay = (18 * 60 + i) % 1440;
-      const seed = i + seedOffset;
+      const seed = i;
 
       let value = 0;
 
       value = shapeFn ? shapeFn(minuteOfDay, seed) : 0;
 
-      series.push(Math.round(value * scale));
+      series.push(Math.round(value));
     }
     return series;
   }
@@ -54,67 +52,54 @@
   // Generate data
   const rcuPoints = generateCapacitySeries({
     shapeFn: (minuteOfDay, seed) => {
-      const hour = Math.floor(minuteOfDay / 60);
-      const minute = minuteOfDay % 60;
-      const time = hour + minute / 60;
-
+      const time = minuteOfDay / 60;
       let base = 0;
 
       if (time >= 6 && time < 9) {
-        // Exponential ramp-up from 6am to 9am
-        const progress = (time - 6) / 3; // normalized between 0 and 1
-        base = 10000 + Math.pow(progress, 2.5) * 150000;
-      } else if (time >= 9 && time < 17) {
-        // Business hours: variable load with controlled ceiling
-        const hoursSince9 = time - 9;
-        const lunchWave = Math.sin(hoursSince9 * Math.PI / 4); // peak ~12
-        const afternoonWave = Math.cos(hoursSince9 * Math.PI / 6); // dip ~14–15
-        const variation = lunchWave * 10000 + afternoonWave * 1000;
-        base = 75000 + variation + Math.sin(seed / 8) * 5000 + Math.random() * 3000;
-        base = Math.min(base, 110000); // cap to stay under 9am peak
+        const progress = (time - 6) / 3;
+        base = 12000 + Math.pow(progress, 2.3) * 180000;
+      } else if (time >= 9 && time < 10) {
+        base = 180000 + (seed % 100) * 60 + Math.random() * 4000;
+      } else if (time >= 10 && time < 11) {
+        const progress = time - 10;
+        const start = 105000;
+        const end = 95000;
+        base = start - (start - end) * progress + (seed % 100) * 40 + Math.random() * 3000;
+      } else if (time >= 11 && time < 17) {
+        base = 95000 + (seed % 120) * 60 + Math.random() * 4000;
       } else if (time >= 17 && time < 20) {
-        // Post-work write bursts with random plateaus
-        base = 50000 + (seed % 60 < 30 ? 15000 : 10000) + Math.random() * 5000;
+        base = 50000 + (seed % 60 < 20 ? 15000 : 8000) + Math.random() * 3000;
       } else if (time >= 20 && time < 22) {
-        // Evening taper with jitter
-        base = 25000 - ((time - 20) / 2) * 10000 + Math.random() * 3000;
+        base = 25000 - ((time - 20) / 2) * 10000 + Math.random() * 2000;
       } else {
-        // Overnight flat low with minor jitter
-        base = 10000 + Math.random() * 2000;
+        base = 9000 + Math.random() * 1500;
       }
 
-      return base + Math.random() * 5000;
+      return base + Math.random() * 3000;
     }
   });
 
   const wcuPoints = generateCapacitySeries({
-    seedOffset: 1440,
     shapeFn: (minuteOfDay, seed) => {
-      const hour = Math.floor(minuteOfDay / 60);
-      const minute = minuteOfDay % 60;
-      const time = hour + minute / 60;
-
+      const time = minuteOfDay / 60;
       let base = 0;
 
-      // Simulate weekday-style traffic
-      if (time >= 6 && time < 9) {
-        // Morning ramp-up
-        base = 5000 + ((time - 6) / 3) * 20000;
+      if (time >= 1 && time < 4) {
+        // Overnight batch write
+        base = 130000 + (seed % 30) * 300 + Math.random() * 5000;
+      } else if (time >= 6 && time < 9) {
+        const progress = (time - 6) / 3;
+        base = 10000 + Math.pow(progress, 2.5) * 100000;
       } else if (time >= 9 && time < 17) {
-        // Daytime plateau with some fluctuation
-        base = 25000 + Math.sin(seed / 10) * 3000;
-      } else if (time >= 17 && time < 20) {
-        // Early evening dip
-        base = 15000 + Math.sin(seed / 12) * 2000;
-      } else if (time >= 20 && time < 22) {
-        // Post-dinner mini bump
-        base = 18000 + Math.sin(seed / 8) * 2500;
+        base = 80000 + (seed % 100) * 80 + Math.random() * 3000;
+      } else if (time >= 17 && time < 19) {
+        base = 60000 + (seed % 40 < 20 ? 12000 : 7000) + Math.random() * 2500;
+      } else if (time >= 19 && time < 22) {
+        base = 30000 - ((time - 19) / 3) * 15000 + Math.random() * 2000;
       } else {
-        // Late night/early morning low
-        base = 7000 + Math.sin(seed / 16) * 1000;
+        base = 8000 + Math.random() * 1000;
       }
 
-      // Add some noise
       return base + Math.random() * 2000;
     }
   });
@@ -144,32 +129,32 @@ statsDiv.innerHTML = `
     <thead>
       <tr>
         <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Metric</th>
-        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">WCU</th>
-        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">RCU</th>
+        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Reads</th>
+        <th style="text-align: left; padding: 4px 12px; border-bottom: 2px solid #ccc;">Writes</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td style="padding: 4px 12px;">Average</td>
-        <td style="padding: 4px 12px;">${Math.round(averageWCU).toLocaleString()}</td>
         <td style="padding: 4px 12px;">${Math.round(averageRCU).toLocaleString()}</td>
+        <td style="padding: 4px 12px;">${Math.round(averageWCU).toLocaleString()}</td>
       </tr>
       <tr>
         <td style="padding: 4px 12px;">Peak</td>
-        <td style="padding: 4px 12px;">${peakWCU.toLocaleString()}</td>
         <td style="padding: 4px 12px;">${peakRCU.toLocaleString()}</td>
+        <td style="padding: 4px 12px;">${peakWCU.toLocaleString()}</td>
       </tr>
       <tr>
         <td style="padding: 4px 12px;">Peak Duration (≥90%)</td>
-        <td style="padding: 4px 12px;">${peakDurationWCU} hours</td>
         <td style="padding: 4px 12px;">${peakDurationRCU} hours</td>
+        <td style="padding: 4px 12px;">${peakDurationWCU} hours</td>
       </tr>
     </tbody>
   </table>
 `;
-document.body.insertBefore(statsDiv, document.getElementById('chart-container'));
+  document.getElementById('chart-container').insertAdjacentElement('afterend', statsDiv);
 
-  const ctx = document.getElementById('wcuChart').getContext('2d');
+  const ctx = document.getElementById('chart').getContext('2d');
 
   new Chart(ctx, {
     type: 'line',
@@ -177,7 +162,7 @@ document.body.insertBefore(statsDiv, document.getElementById('chart-container'))
       labels,
       datasets: [
         {
-          label: 'Write Capacity Units',
+          label: 'Write Request Units',
           data: wcuPoints,
           borderColor: '#f57a16',
           backgroundColor: '#f57a16',
@@ -187,7 +172,7 @@ document.body.insertBefore(statsDiv, document.getElementById('chart-container'))
           borderWidth: 2
         },
         {
-          label: 'Read Capacity Units',
+          label: 'Read Request Units',
           data: rcuPoints,
           borderColor: '#2073ad',
           backgroundColor: '#2073ad',
