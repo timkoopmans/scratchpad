@@ -50,6 +50,7 @@
         <option value="flatline">Flatline</option>
         <option value="sinusoidal">Sinusoidal</option>
         <option value="diurnal">Diurnal</option>
+        <option value="nocturnal">Nocturnal</option>
         <option value="chaos">Chaos (Random)</option>
     </select>
 </div>
@@ -334,6 +335,9 @@
                             break;
                         case "diurnal":
                             actual = 400000 + Math.cos((i - 12) * Math.PI / 12) * 400000 * 0.9;
+                            break;
+                        case "nocturnal":
+                            actual = 400000 + Math.cos((i - 0) * Math.PI / 12) * 400000 * 0.9;
                             break;
                         case "chaos":
                             actual = base * (0.5 + Math.random() * 5);
