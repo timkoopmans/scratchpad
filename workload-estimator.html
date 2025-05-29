@@ -42,8 +42,10 @@
         <option value="dailyPeak">Unimodal (Daily Peak)</option>
         <option value="twiceDaily">Bimodal (Twice Daily Peak)</option>
         <option value="batch">Batch</option>
+        <option value="sawtooth">Sawtooth</option>
         <option value="bursty">Bursty</option>
         <option value="rampUp">Ramp Up</option>
+        <option value="rampDown">Ramp Down</option>
         <option value="mountain">Mountain</option>
         <option value="flatline">Flatline</option>
         <option value="sinusoidal">Sinusoidal</option>
@@ -108,6 +110,7 @@
                         tension: 0.2,
                         cubicInterpolationMode: 'monotone',
                         pointHitRadius: 25,
+                        // stepped: true,
                     },
                     {
                         label: "Planned ops/sec",
@@ -124,6 +127,7 @@
                         tension: 0.2,
                         cubicInterpolationMode: 'monotone',
                         pointHitRadius: 25,
+                        // stepped: true,
                     }
                 ],
             },
@@ -307,11 +311,17 @@
                         case "batch":
                             actual = (i >= 0 && i <= 3) ? base * 6 : base;
                             break;
+                        case "sawtooth":
+                            actual = base + (i % 6) * base * 0.5;
+                            break;
                         case "bursty":
                             actual = (Math.random() < 0.3) ? base * (5 + Math.random() * 5) : base;
                             break;
                         case "rampUp":
                             actual = base + (i * (base * 9 / 23));  // from 100k to ~1M
+                            break;
+                        case "rampDown":
+                            actual = base * (1 - i / 24);
                             break;
                         case "mountain":
                             actual = base + Math.max(0, (12 - Math.abs(i - 12)) * (base / 2));
