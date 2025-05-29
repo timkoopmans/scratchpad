@@ -45,7 +45,7 @@
         <option value="burst">Burst</option>
         <option value="rampUp">Ramp Up</option>
         <option value="weekendSpike">Weekend Spike</option>
-        <option value="valleyShape">Valley Shape</option>
+        <option value="mountain">Mountain</option>
         <option value="flatline">Flatline</option>
         <option value="sinusoidal">Sinusoidal</option>
         <option value="diurnal">Diurnal</option>
@@ -316,7 +316,7 @@
                         case "weekendSpike":
                             actual = (i >= 20) ? base * 7 : base;
                             break;
-                        case "valleyShape":
+                        case "mountain":
                             actual = base + Math.max(0, (12 - Math.abs(i - 12)) * (base / 2));
                             break;
                         case "flatline":
