@@ -42,16 +42,8 @@
         <option value="dailyPeak">Unimodal (Daily Peak)</option>
         <option value="twiceDaily">Bimodal (Twice Daily Peak)</option>
         <option value="batch">Batch</option>
-        <option value="sawtooth">Sawtooth</option>
-        <option value="bursty">Bursty</option>
-        <option value="rampUp">Ramp Up</option>
-        <option value="rampDown">Ramp Down</option>
         <option value="flatline">Flatline</option>
-        <option value="sinusoidal">Sinusoidal</option>
         <option value="diurnal">Diurnal</option>
-        <option value="nocturnal">Nocturnal</option>
-        <option value="mountain">Mountain</option>
-        <option value="valley">Valley</option>
         <option value="chaos">Chaos (Random)</option>
     </select>
 </div>
@@ -335,7 +327,7 @@
                             actual = 400000 + Math.cos((i - 12) * Math.PI / 12) * 400000 * 0.9;
                             break;
                         case "nocturnal":
-                            actual = 400000 + Math.cos((i - 0) * Math.PI / 12) * 400000 * 0.9;
+                            actual = 400000 + Math.cos((i) * Math.PI / 12) * 400000 * 0.9;
                             break;
                         case "mountain":
                             actual = base + Math.max(0, (12 - Math.abs(i - 12)) * (base / 2));
@@ -388,21 +380,42 @@
         }
     };
 
+    document.getElementById("patternSelect").addEventListener("change", function () {
+        // Update the pattern param in the URL without reloading
+        const url = new URL(window.location);
+        url.searchParams.set("pattern", this.value);
+        window.history.replaceState({}, '', url);
+
+        // Existing logic
+        applyPattern(this.value);
+    });
+
     document.body.onload = function onBodyLoaded() {
         let urlSearchParams = new URLSearchParams(window.location.search);
+        let pattern = urlSearchParams.get("pattern");
 
-        if (
-            !urlSearchParams.has("isTest") ||
-            urlSearchParams.get("isTest") !== "true"
-        ) {
-            console.log("Demo build running");
+        // Set dropdown if pattern param exists
+        if (pattern) {
+            const select = document.getElementById("patternSelect");
+            if ([...select.options].some(opt => opt.value === pattern)) {
+                select.value = pattern;
+            }
+        }
 
-            setupChart({
-                isTest: false,
-                disablePlugin: false,
-                draggableAxis: "both",
-                roundingPrecision: 2,
-            });
+        setupChart({
+            isTest: false,
+            disablePlugin: false,
+            draggableAxis: "both",
+            roundingPrecision: 2,
+        });
+
+        // Apply pattern after chart is ready
+        if (pattern) {
+            // Wait for chart to be initialized
+            setTimeout(() => {
+                const select = document.getElementById("patternSelect");
+                select.dispatchEvent(new Event("change"));
+            }, 500);
         }
     };
 </script>
