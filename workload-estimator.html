@@ -41,10 +41,9 @@
         <option value="default">Default</option>
         <option value="dailyPeak">Daily Peak</option>
         <option value="twiceDaily">Twice Daily Peak</option>
-        <option value="overnightBatch">Overnight Batch</option>
-        <option value="burst">Burst</option>
+        <option value="batch">Batch</option>
+        <option value="bursty">Bursty</option>
         <option value="rampUp">Ramp Up</option>
-        <option value="weekendSpike">Weekend Spike</option>
         <option value="mountain">Mountain</option>
         <option value="flatline">Flatline</option>
         <option value="sinusoidal">Sinusoidal</option>
@@ -299,22 +298,19 @@
 
                     switch (pattern) {
                         case "dailyPeak":
-                            actual = i === 9 ? base * 5 : base;
+                            actual = i === 9 ? base * (4.5 + Math.random()) : base + (Math.random() * base * 0.1);
                             break;
                         case "twiceDaily":
-                            actual = (i === 9 || i === 18) ? base * 4 : base;
+                            actual = (i === 9 || i === 18) ? base * (3.5 + Math.random()) : base + (Math.random() * base * 0.1);
                             break;
-                        case "overnightBatch":
+                        case "batch":
                             actual = (i >= 0 && i <= 3) ? base * 6 : base;
                             break;
-                        case "burst":
+                        case "bursty":
                             actual = (Math.random() < 0.3) ? base * (5 + Math.random() * 5) : base;
                             break;
                         case "rampUp":
                             actual = base + (i * (base * 9 / 23));  // from 100k to ~1M
-                            break;
-                        case "weekendSpike":
-                            actual = (i >= 20) ? base * 7 : base;
                             break;
                         case "mountain":
                             actual = base + Math.max(0, (12 - Math.abs(i - 12)) * (base / 2));
@@ -326,7 +322,7 @@
                             actual = base + base * Math.sin((i / 24) * 2 * Math.PI);
                             break;
                         case "diurnal":
-                            actual = base + (Math.cos((i - 12) * Math.PI / 12) * -1 * base * 0.8);
+                            actual = 400000 + (Math.cos((i - 12) * Math.PI / 12) * -1 * 400000 * 0.9);
                             break;
                         default:
                             actual = [
