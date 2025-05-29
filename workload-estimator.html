@@ -35,6 +35,7 @@
 <body>
 
 <canvas id="chartJSContainer"></canvas>
+
 <div style="padding: 1em; font-family: sans-serif;">
     <label for="patternSelect">Select Workload Pattern:</label>
     <select id="patternSelect">
@@ -46,6 +47,8 @@
         <option value="diurnal">Diurnal</option>
         <option value="chaos">Chaos (Random)</option>
     </select>
+    <button id="saveCsvBtn" style="margin-left:1em;">Save CSV</button>
+
 </div>
 <div id="summaryTable" style="padding: 1em; font-family: sans-serif;"></div>
 
@@ -388,6 +391,31 @@
 
         // Existing logic
         applyPattern(this.value);
+    });
+
+    document.getElementById("saveCsvBtn").addEventListener("click", function () {
+        const chart = window.testedChart;
+        const labels = chart.data.labels;
+        const datasets = chart.data.datasets;
+        const pattern = document.getElementById("patternSelect").value || "workload";
+
+        let csv = "Hour,Actual ops/sec,Planned ops/sec\n";
+        for (let i = 0; i < labels.length; i++) {
+            const hour = labels[i];
+            const actual = (datasets[0].data[i]?.y * 100000).toFixed(0);
+            const planned = (datasets[1].data[i]?.y * 100000).toFixed(0);
+            csv += `${hour},${actual},${planned}\n`;
+        }
+
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${pattern}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 
     document.body.onload = function onBodyLoaded() {
