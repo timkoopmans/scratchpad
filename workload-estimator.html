@@ -1,0 +1,374 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Workload Estimator</title>
+  <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, user-scalable=no"
+  />
+
+  <script src="assets/chart.min.js"></script>
+  <script src="assets/lodash.min.js"></script>
+  <script src="assets/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/patternomaly/1.3.2/patternomaly.min.js"></script>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      background-color: #fff;
+      position: relative;
+      max-width: 100vw;
+      min-height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+<div style="padding: 1em; font-family: sans-serif;">
+  <label for="patternSelect">Select Workload Pattern:</label>
+  <select id="patternSelect">
+    <option value="default">Default</option>
+    <option value="dailyPeak">Daily Peak</option>
+    <option value="twiceDaily">Twice Daily Peak</option>
+    <option value="overnightBatch">Overnight Batch</option>
+    <option value="burst">Burst</option>
+    <option value="rampUp">Ramp Up</option>
+    <option value="weekendSpike">Weekend Spike</option>
+    <option value="valleyShape">Valley Shape</option>
+    <option value="flatline">Flatline</option>
+  </select>
+</div>
+<canvas id="chartJSContainer"></canvas>
+<div id="summaryTable" style="padding: 1em; font-family: sans-serif;"></div>
+
+<script>
+  const isFirefox = navigator.userAgent.match(/firefox|fxios/i),
+          chartConfiguration = {
+            type: "line",
+            options: {
+              plugins: { datalabels: { display: false } },
+              scales: {
+                x: {
+                  type: "linear",
+                  stacked: false,
+                  min: 0,
+                  max: 23,
+                  ticks: {
+                    stepSize: 1
+                  },
+                  title: {
+                    display: true,
+                    text: "hour"
+                  },
+                },
+                y: {
+                  stacked: false,
+                  beginAtZero: false,
+                  min: 0,
+                  grace: "20%",
+                  ticks: {
+                    callback: function(value) {
+                      return value + "00k";
+                    }
+                  },
+                  title: {
+                    display: true,
+                    text: "ops/sec"
+                  }
+                },
+              },
+            },
+            data: {
+              labels: [...Array(24).keys()].map(h => `${h}:00`),
+              datasets: [
+                {
+                  label: "Actual ops/sec",
+                  data: [...Array(24).keys()].map((x, i) => ({ x, y: [150000, 130000, 110000, 100000, 100000, 110000, 170000, 300000,
+                    450000, 550000, 400000, 350000, 330000, 310000, 300000,
+                    320000, 350000, 370000, 330000, 250000, 200000, 170000,
+                    150000, 130000][i] / 100000 })),
+                  backgroundColor: pattern.draw('line', '#ff550000', '#FF550099', 6),
+                  borderColor: '#FF5500',
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.3,
+                  pointHitRadius: 25,
+                },
+                {
+                  label: "Planned ops/sec",
+                  data: [...Array(24).keys()].map((x, i) => ({ x, y: [150000, 130000, 110000, 100000, 100000, 110000, 170000, 300000,
+                    450000, 550000, 400000, 350000, 330000, 310000, 300000,
+                    320000, 350000, 370000, 330000, 250000, 200000, 170000,
+                    150000, 130000][i] * 1.25 / 100000 })),
+                  backgroundColor: pattern.draw('disc', '#326DE600', '#326DE699', 6),
+                  borderColor: '#326DE6',
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.3,
+                  pointHitRadius: 25,
+                }
+              ],
+            },
+          };
+
+  window.isPluginLoaded = false;
+
+  window.setupChart = function setupChart(options) {
+    // demo config loading
+    const {
+      disablePlugin,
+      draggableAxis,
+      roundingPrecision,
+      renderOnHoverCirclesTrail = false,
+    } = options;
+    const isTest = false;
+
+    let onDrag = undefined;
+
+    function onPluginScriptLoaded() {
+      if (!window.isPluginLoaded) console.log("Plugin script loaded");
+      window.isPluginLoaded = true;
+
+      const bothAxesDraggable = draggableAxis === "both",
+              xAxisDraggable =
+                      !draggableAxis || bothAxesDraggable || draggableAxis === "x",
+              yAxisDraggable = bothAxesDraggable || draggableAxis === "y";
+
+      function drawDragMarker(e) {
+        // demo environment stub
+      }
+
+      const configuration = _.merge(
+              {
+                options: {
+                  animation: !isTest,
+                  plugins: {
+                    dragData: disablePlugin
+                            ? false
+                            : {
+                              dragX: false,
+                              dragY: true,
+                              round: roundingPrecision,
+                              showTooltip: true,
+                              onDragStart: function (e) {
+                                if (renderOnHoverCirclesTrail) drawDragMarker(e);
+                              },
+                              onDrag: function (...args) {
+                                const [e] = args;
+                                if (e.target?.style)
+                                  e.target.style.cursor = "grabbing";
+
+                                onDrag?.(...args);
+                                if (renderOnHoverCirclesTrail) drawDragMarker(e);
+                              },
+                              onDragEnd: function (e) {
+                                if (e.target?.style)
+                                  e.target.style.cursor = "default";
+
+                                if (renderOnHoverCirclesTrail) drawDragMarker(e);
+                              },
+                            },
+                  },
+                  onHover: function (e) {
+                    const point = e.chart.getElementsAtEventForMode(
+                            e,
+                            e.chart.options.interaction.mode,
+                            { intersect: true },
+                            false,
+                    );
+                    if (point.length) e.native.target.style.cursor = "grab";
+                    else e.native.target.style.cursor = "default";
+                  },
+                },
+              },
+              {
+                ...chartConfiguration,
+                options: {
+                  ...chartConfiguration.options,
+                  plugins: {
+                    ...(chartConfiguration.options.plugins ?? {}),
+                    datalabels: {
+                      ...(chartConfiguration.options.plugins?.datalabels ?? {}),
+                      ...(chartConfiguration.options.plugins?.datalabels?.display
+                              ? {
+                                formatter: function (value, context) {
+                                  return (
+                                          dateFns.differenceInDays(value[1], value[0]) + "d"
+                                  );
+                                },
+                              }
+                              : {}),
+                    },
+                  },
+                },
+                data: {
+                  ...chartConfiguration.data,
+                  ...(chartConfiguration.scales?.x?.type === "time"
+                          ? {
+                            datasets: chartConfiguration.data.datasets.map((d) => ({
+                              ...d,
+                              data: d.data.map((darr) =>
+                                      darr.map((date) => new Date(date)),
+                              ),
+                            })),
+                          }
+                          : {}),
+                },
+              },
+      );
+
+      var ctx = document
+              .getElementById("chartJSContainer")
+              .getContext("2d");
+      Chart.register(ChartDataLabels);
+      window.testedChart = new Chart(ctx, configuration);
+
+      let originalTestedChartData = _.cloneDeep(window.testedChart.data);
+      window.resetData = function resetData() {
+        console.log(
+                "[resetData] Resetting data to original data passed to setupChart()",
+                originalTestedChartData,
+        );
+
+        window.testedChart.data = _.cloneDeep(originalTestedChartData);
+        window.testedChart.update("none");
+      };
+
+      window.isTestReady = true;
+
+      function updateSummaryTable() {
+        const actual = window.testedChart.data.datasets[0].data.map(d => d.y * 100000);
+        const planned = window.testedChart.data.datasets[1].data.map(d => d.y * 100000);
+
+        const totalActual = _.sum(actual);
+        const totalPlanned = _.sum(planned);
+        const delta = totalPlanned - totalActual;
+
+        const formatOps = v => (v >= 1_000_000 ? (v / 1_000_000).toFixed(2) + "M" : (v / 1000).toFixed(0) + "K");
+
+        let warnings = [];
+        for (let i = 0; i < 24; i++) {
+          if (actual[i] > planned[i]) warnings.push(`Hour ${i}: underprovisioned (actual ${formatOps(actual[i])} > planned ${formatOps(planned[i])})`);
+          if (planned[i] > actual[i] * 1.5) warnings.push(`Hour ${i}: overprovisioned (planned ${formatOps(planned[i])} >> actual ${formatOps(actual[i])})`);
+        }
+
+        document.getElementById("summaryTable").innerHTML = `
+          <table border="1" cellpadding="6" cellspacing="0">
+            <tr><th></th><th>Total Ops/sec</th></tr>
+            <tr><td>Actual</td><td>${formatOps(totalActual)}</td></tr>
+            <tr><td>Planned</td><td>${formatOps(totalPlanned)}</td></tr>
+            <tr><td>Delta</td><td>${formatOps(delta)}</td></tr>
+          </table>
+          <div style="color: red; margin-top: 1em;">
+            ${warnings.length ? `<strong>Warnings:</strong><ul>${warnings.map(w => `<li>${w}</li>`).join("")}</ul>` : "<strong>No provisioning issues detected.</strong>"}
+          </div>
+        `;
+      }
+
+      updateSummaryTable();
+
+      function applyPattern(pattern) {
+        const base = 100000;
+        const data = [];
+
+        for (let i = 0; i < 24; i++) {
+          let actual = base;
+
+          switch (pattern) {
+            case "dailyPeak":
+              actual = i === 9 ? base * 5 : base;
+              break;
+            case "twiceDaily":
+              actual = (i === 9 || i === 18) ? base * 4 : base;
+              break;
+            case "overnightBatch":
+              actual = (i >= 0 && i <= 3) ? base * 6 : base;
+              break;
+            case "burst":
+              actual = i === 13 ? base * 10 : base;
+              break;
+            case "rampUp":
+              actual = base + (i * (base * 9 / 23));  // from 100k to ~1M
+              break;
+            case "weekendSpike":
+              actual = (i >= 20) ? base * 7 : base;
+              break;
+            case "valleyShape":
+              actual = base + Math.max(0, (12 - Math.abs(i - 12)) * (base / 2));
+              break;
+            case "flatline":
+              actual = base;
+              break;
+            default:
+              actual = [
+                150000, 130000, 110000, 100000, 100000, 110000, 170000, 300000,
+                450000, 550000, 400000, 350000, 330000, 310000, 300000,
+                320000, 350000, 370000, 330000, 250000, 200000, 170000,
+                150000, 130000
+              ][i];
+          }
+
+          data.push({ x: i, y: actual / 100000 });
+        }
+
+        window.testedChart.data.datasets[0].data = data;
+        window.testedChart.data.datasets[1].data = data.map(d => ({ x: d.x, y: d.y * 1.25 }));
+        window.testedChart.update();
+        updateSummaryTable();
+      }
+
+      document.getElementById("patternSelect").addEventListener("change", function () {
+        applyPattern(this.value);
+      });
+
+      window.testedChart.options.plugins.dragData.onDragEnd = function (e) {
+        if (e.target?.style) e.target.style.cursor = "default";
+        if (renderOnHoverCirclesTrail) drawDragMarker(e);
+        updateSummaryTable();
+      };
+    }
+
+    if (window.isPluginLoaded) {
+      onPluginScriptLoaded();
+    } else {
+      // load the plugin script dynamically - either with IstanbulJS's coverage statements or not, depending on the value of isTest
+      let scriptElement = document.createElement("script");
+      scriptElement.src = isTest
+              ? "assets/chartjs-plugin-dragdata-test-browser.js"
+              : "assets/chartjs-plugin-dragdata.min.js";
+
+      console.log("Loading plugin script from:", scriptElement.src);
+
+      scriptElement.onload = onPluginScriptLoaded;
+      document.head.appendChild(scriptElement);
+    }
+  };
+
+  document.body.onload = function onBodyLoaded() {
+    let urlSearchParams = new URLSearchParams(window.location.search);
+
+    if (
+            !urlSearchParams.has("isTest") ||
+            urlSearchParams.get("isTest") !== "true"
+    ) {
+      console.log("Demo build running");
+
+      setupChart({
+        isTest: false,
+        disablePlugin: false,
+        draggableAxis: "both",
+        roundingPrecision: 2,
+      });
+    }
+  };
+</script>
+</body>
+</html>
