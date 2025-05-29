@@ -291,6 +291,8 @@
 
             updateSummaryTable();
 
+            window.updateSummaryTable = updateSummaryTable;
+
             function applyPattern(pattern) {
                 const base = 100000;
                 const data = [];
@@ -376,8 +378,6 @@
             let scriptElement = document.createElement("script");
             scriptElement.src = "assets/chartjs-plugin-dragdata.min.js";
 
-            console.log("Loading plugin script from:", scriptElement.src);
-
             scriptElement.onload = onPluginScriptLoaded;
             document.head.appendChild(scriptElement);
         }
@@ -416,6 +416,67 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    });
+
+    // Add after setupChart is called and chart is initialized
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartCanvas = document.getElementById('chartJSContainer');
+        const chartRect = chartCanvas.getBoundingClientRect();
+
+        // Create overlay for y-axis drag
+        const yAxisOverlay = document.createElement('div');
+        yAxisOverlay.style.position = 'absolute';
+        yAxisOverlay.style.left = (chartRect.left - chartCanvas.offsetLeft) + 'px';
+        yAxisOverlay.style.top = (chartRect.top - chartCanvas.offsetTop) + 'px';
+        yAxisOverlay.style.width = '40px'; // adjust as needed for y-axis width
+        yAxisOverlay.style.height = chartRect.height + 'px';
+        yAxisOverlay.style.cursor = 'ns-resize';
+        yAxisOverlay.style.zIndex = 10;
+        yAxisOverlay.style.background = 'rgba(0,0,0,0)';
+        yAxisOverlay.id = 'yAxisDragOverlay';
+
+        chartCanvas.parentElement.style.position = 'relative';
+        chartCanvas.parentElement.appendChild(yAxisOverlay);
+
+        let dragging = false;
+        let startY = 0;
+        let startData = [];
+
+        yAxisOverlay.addEventListener('mousedown', function (e) {
+            dragging = true;
+            startY = e.clientY;
+            // Save original data
+            startData = window.testedChart.data.datasets.map(ds =>
+                ds.data.map(point => ({ ...point }))
+            );
+            document.body.style.cursor = 'ns-resize';
+        });
+
+        window.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            const chart = window.testedChart;
+            const yScale = chart.scales.y;
+            const deltaPx = e.clientY - startY;
+            // Convert pixel delta to value delta
+            const valueDelta = yScale.getValueForPixel(yScale.top) - yScale.getValueForPixel(yScale.top + deltaPx);
+
+            chart.data.datasets.forEach((ds, i) => {
+                ds.data = startData[i].map(point => ({
+                    ...point,
+                    y: Math.max(0, point.y + valueDelta)
+                }));
+            });
+            chart.update('none');
+        });
+
+        window.addEventListener('mouseup', function () {
+            if (dragging) {
+                dragging = false;
+                document.body.style.cursor = '';
+                window.testedChart.update();
+                updateSummaryTable();
+            }
+        });
     });
 
     document.body.onload = function onBodyLoaded() {
