@@ -96,6 +96,7 @@
                         stacked: false,
                         beginAtZero: false,
                         min: 0,
+                        max: 1_000_000,
                         grace: "20%",
                         ticks: {
                             callback: function (value) {
@@ -318,6 +319,7 @@
 
             function applyPattern(pattern) {
                 const base = 100000;
+                window.testedChart.options.scales.y.max = 1_000_000;
                 const data = [];
 
                 for (let i = 0; i < 24; i++) {
@@ -475,6 +477,7 @@
                 ds.data.map(point => ({ ...point }))
             );
             document.body.style.cursor = 'ns-resize';
+            document.body.style.userSelect = 'none';
         });
 
         window.addEventListener('mousemove', function (e) {
@@ -484,6 +487,12 @@
             const deltaPx = e.clientY - startY;
             // Convert pixel delta to value delta
             const valueDelta = yScale.getValueForPixel(yScale.top) - yScale.getValueForPixel(yScale.top + deltaPx);
+
+            // Find current max y value in all datasets
+            const allY = chart.data.datasets.flatMap(ds => ds.data.map(point => point.y));
+            const currentMax = Math.max(...allY);
+            // Set y.max to 1.25x the current max
+            chart.options.scales.y.max = currentMax * 1.25;
 
             chart.data.datasets.forEach((ds, i) => {
                 ds.data = startData[i].map(point => ({
@@ -498,6 +507,7 @@
             if (dragging) {
                 dragging = false;
                 document.body.style.cursor = '';
+                document.body.style.userSelect = '';
                 window.testedChart.update();
                 updateSummaryTable();
             }
