@@ -68,7 +68,7 @@
                                 let label = context.dataset.label || '';
                                 if (label) label += ': ';
                                 if (value >= 1_000_000) {
-                                    return label + (value / 1_000_000).toFixed(0) + 'M';
+                                    return label + (value / 1_000_000).toFixed(2) + 'M';
                                 } else if (value >= 1_000) {
                                     return label + (value / 1_000).toFixed(0) + 'K';
                                 } else {
