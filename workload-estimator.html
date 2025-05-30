@@ -110,7 +110,7 @@
                         },
                         title: {
                             display: true,
-                            text: "ops/sec"
+                            text: "← ops/sec →"
                         }
                     }
                 },
@@ -165,7 +165,6 @@
             roundingPrecision,
             renderOnHoverCirclesTrail = false,
         } = options;
-        const isTest = false;
 
         let onDrag = undefined;
 
@@ -185,7 +184,7 @@
             const configuration = _.merge(
                 {
                     options: {
-                        animation: !isTest,
+                        animation: true,
                         plugins: {
                             dragData: disablePlugin
                                 ? false
@@ -277,8 +276,6 @@
                 window.testedChart.data = _.cloneDeep(originalTestedChartData);
                 window.testedChart.update("none");
             };
-
-            window.isTestReady = true;
 
             function updateSummaryTable() {
                 const actual = window.testedChart.data.datasets[0].data.map(d => d.y);
@@ -520,7 +517,6 @@
         }
 
         setupChart({
-            isTest: false,
             disablePlugin: false,
             draggableAxis: "both",
             roundingPrecision: 2,
