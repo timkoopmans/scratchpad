@@ -367,6 +367,8 @@
                 updateSummaryTable();
             }
 
+            window.applyPattern = applyPattern;
+
             document.getElementById("patternSelect").addEventListener("change", function () {
                 applyPattern(this.value);
             });
