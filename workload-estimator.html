@@ -79,14 +79,20 @@
                         grace: "20%",
                         ticks: {
                             callback: function (value) {
-                                return value + "00k";
+                                if (value >= 1_000_000) {
+                                    return (value / 1_000_000).toFixed(2) + "M";
+                                } else if (value >= 1_000) {
+                                    return (value / 1_000).toFixed(0) + "K";
+                                } else {
+                                    return value;
+                                }
                             }
                         },
                         title: {
                             display: true,
                             text: "ops/sec"
                         }
-                    },
+                    }
                 },
             },
             data: {
@@ -98,7 +104,7 @@
                             x, y: [150000, 130000, 110000, 100000, 100000, 110000, 170000, 300000,
                                 450000, 550000, 400000, 350000, 330000, 310000, 300000,
                                 320000, 350000, 370000, 330000, 250000, 200000, 170000,
-                                150000, 130000][i] / 100000
+                                150000, 130000][i]
                         })),
                         backgroundColor: pattern.draw('line', '#ff550000', '#FF550099', 6),
                         borderColor: '#FF5500',
@@ -115,7 +121,7 @@
                             x, y: [150000, 130000, 110000, 100000, 100000, 110000, 170000, 300000,
                                 450000, 550000, 400000, 350000, 330000, 310000, 300000,
                                 320000, 350000, 370000, 330000, 250000, 200000, 170000,
-                                150000, 130000][i] * 1.25 / 100000
+                                150000, 130000][i] * 1.25
                         })),
                         backgroundColor: pattern.draw('disc', '#326DE600', '#326DE699', 6),
                         borderColor: '#326DE6',
@@ -255,8 +261,8 @@
             window.isTestReady = true;
 
             function updateSummaryTable() {
-                const actual = window.testedChart.data.datasets[0].data.map(d => d.y * 100000);
-                const planned = window.testedChart.data.datasets[1].data.map(d => d.y * 100000);
+                const actual = window.testedChart.data.datasets[0].data.map(d => d.y);
+                const planned = window.testedChart.data.datasets[1].data.map(d => d.y);
 
                 const totalActual = _.sum(actual);
                 const totalPlanned = _.sum(planned);
@@ -352,7 +358,7 @@
                             ][i];
                     }
 
-                    data.push({x: i, y: actual / 100000});
+                    data.push({x: i, y: actual});
                 }
 
                 window.testedChart.data.datasets[0].data = data;
@@ -402,8 +408,8 @@
         let csv = "Hour,Actual ops/sec,Planned ops/sec\n";
         for (let i = 0; i < labels.length; i++) {
             const hour = labels[i];
-            const actual = (datasets[0].data[i]?.y * 100000).toFixed(0);
-            const planned = (datasets[1].data[i]?.y * 100000).toFixed(0);
+            const actual = (datasets[0].data[i]?.y).toFixed(0);
+            const planned = (datasets[1].data[i]?.y).toFixed(0);
             csv += `${hour},${actual},${planned}\n`;
         }
 
