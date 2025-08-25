@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ops/vCPU Schema Selector</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+    .form-section {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 6px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+    }
+    select, input[type="number"], input[type="range"] {
+      width: 100%;
+      padding: 6px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    .ops-note {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .radio-group label {
+      font-weight: normal;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .slider-value {
+      font-weight: bold;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Operation Size section -->
+<div class="form-section">
+  <label for="op-size">Operation Size</label>
+  <select id="op-size">
+    <option>1 KB</option>
+    <option>4 KB</option>
+    <option>8 KB</option>
+    <option>16 KB</option>
+  </select>
+</div>
+
+<!-- Option 1: Select dropdown -->
+<div class="form-section">
+  <label for="schema-complexity">Ops/vCPU Schema Complexity (Select)</label>
+  <select id="schema-complexity">
+    <option value="10000">Simple Schema (10K ops/vCPU)</option>
+    <option value="5000">Moderate Schema (5K ops/vCPU)</option>
+    <option value="3333">Complex Schema (3.3K ops/vCPU)</option>
+  </select>
+  <div class="ops-note">
+    Select a schema type to adjust the ops/vCPU rate automatically.
+  </div>
+</div>
+
+<!-- Option 2: Radio group -->
+<div class="form-section">
+  <label>Ops/vCPU Schema Complexity (Radio)</label>
+  <div class="radio-group">
+    <label><input type="radio" name="schema-radio" value="10000"> Simple Schema (10K ops/vCPU)</label>
+    <label><input type="radio" name="schema-radio" value="5000"> Moderate Schema (5K ops/vCPU)</label>
+    <label><input type="radio" name="schema-radio" value="3333"> Complex Schema (3.3K ops/vCPU)</label>
+  </div>
+  <div class="ops-note">
+    Choose one schema type to set the ops/vCPU rate.
+  </div>
+</div>
+
+<!-- Option 3: Slider -->
+<div class="form-section">
+  <label for="schema-slider">Ops/vCPU Schema Complexity (Slider)</label>
+  <input type="range" id="schema-slider" min="1000" max="10000" step="1000" value="10000"
+         oninput="document.getElementById('slider-val').textContent = this.value">
+  <div class="slider-value" id="slider-val">10000</div>
+  <div class="ops-note">
+    Drag to set the exact ops/vCPU rate.
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Subscription Options Mockup</title>
+  <style>
+    .option-block {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 6px;
+      max-width: 300px;
+      font-family: sans-serif;
+    }
+    .slider {
+      width: 100%;
+    }
+    .byoa {
+      margin-top: 6px;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Option 1 — All Variants Listed</h2>
+<div class="option-block">
+  <label><input type="radio" name="sub1"> On-Demand</label>
+  <label><input type="radio" name="sub1"> Flex Premium</label>
+  <label><input type="radio" name="sub1"> On-Demand BYOA</label>
+  <label><input type="radio" name="sub1"> Flex Premium BYOA</label>
+  <input type="range" class="slider" value="100">
+  <div>100% Subscription</div>
+</div>
+
+<h2>Option 2 — Without On-Demand BYOA</h2>
+<div class="option-block">
+  <label><input type="radio" name="sub2"> On-Demand</label>
+  <label><input type="radio" name="sub2"> Flex Premium</label>
+  <label><input type="radio" name="sub2"> Flex Premium BYOA</label>
+  <input type="range" class="slider" value="100">
+  <div>100% Subscription</div>
+</div>
+
+<h2>Option 3 — BYOA as Checkbox</h2>
+<div class="option-block">
+  <label><input type="radio" name="sub3"> On-Demand</label>
+  <label><input type="radio" name="sub3"> Flex Premium</label>
+  <input type="range" class="slider" value="100">
+  <div>100% Subscription</div>
+  <label class="byoa"><input type="checkbox"> BYOA</label>
+</div>
+
+</body>
+</html>

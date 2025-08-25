@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Vector Search Latency Benchmark</title>
+    <style>
+        #chartContainer {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            position: relative;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chartContainer">
+        <canvas id="latencyChart" style="display: block; box-sizing: border-box; height: 450px; width: 900px;" width="1800" height="900"></canvas>
+    </div>
+    <script>
+    const ctx = document.getElementById('latencyChart');
+    const labels = ['scylla', 'qdrant', 'milvus', 'weaviate', 'elasticsearch', 'redis', 'cassandra'];
+    const dataAvg =  [9, 41, 47, 62, 70, 103, 40];
+    const dataP95 =  [13, 46, 74, 95, 86, 112, 57];
+    const dataP99 =  [17, 52, 88, 145, 106, 118, 90];
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Avg',
+            data: dataAvg,
+            backgroundColor: [
+              'rgba(52, 152, 219, 0.85)', // ScyllaDB blue
+              '#b0b0b0', // grayscale
+              '#b0b0b0',
+              '#b0b0b0',
+              '#b0b0b0',
+              '#b0b0b0',
+              '#b0b0b0'
+            ],
+            borderColor: [
+              'rgba(41, 128, 185, 1)', // ScyllaDB blue
+              '#888',
+              '#888',
+              '#888',
+              '#888',
+              '#888',
+              '#888'
+            ],
+            borderWidth: 1
+          },
+          {
+            label: 'P95',
+            data: dataP95,
+            backgroundColor: [
+              'rgba(41, 128, 185, 0.85)', // ScyllaDB blue (darker)
+              '#d0d0d0',
+              '#d0d0d0',
+              '#d0d0d0',
+              '#d0d0d0',
+              '#d0d0d0',
+              '#d0d0d0'
+            ],
+            borderColor: [
+              'rgba(41, 128, 185, 1)',
+              '#aaa',
+              '#aaa',
+              '#aaa',
+              '#aaa',
+              '#aaa',
+              '#aaa'
+            ],
+            borderWidth: 1
+          },
+          {
+            label: 'P99',
+            data: dataP99,
+            backgroundColor: [
+              'rgba(52, 152, 219, 0.65)', // ScyllaDB blue (lighter)
+              '#888',
+              '#888',
+              '#888',
+              '#888',
+              '#888',
+              '#888'
+            ],
+            borderColor: [
+              'rgba(41, 128, 185, 1)',
+              '#555',
+              '#555',
+              '#555',
+              '#555',
+              '#555',
+              '#555'
+            ],
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 8, right: 8, bottom: 8, left: 8 } },
+        plugins: {
+          legend: { position: 'top' },
+          title: {
+            display: true,
+            text: 'Latency (ms): Avg vs P95 vs P99'
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} ms`
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: false,
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'ms' },
+            ticks: {
+              stepSize: 25
+            }
+          }
+        }
+      }
+    });
+    </script>
+
+</body>
+</html>
