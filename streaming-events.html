@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Streaming Events Chart</title>
+  <style>
+    body {
+      background: radial-gradient(ellipse at 50% 95%, #3bb6e9 0%, #0a174e 50%, #01051a 100%);
+
+      #chart-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      background: transparent;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chart-container">
+    <canvas id="streamChart" width="800" height="450"></canvas>
+  </div>
+  <script src="assets/chart.min.js"></script>
+  <script>
+    const NUM_LINES = 128;
+    // Vibrant color scheme for blue background
+    const COLORS = Array.from({length: NUM_LINES}, (_, i) => `hsl(${(i*360/NUM_LINES)|0}, 90%, 55%)`);
+    const DATA_POINTS = 60;
+    const BASE_OPS = 5_000_000;
+
+    // Format time as MM:SS.000
+    const getTimeLabel = ts => {
+      const d = new Date(ts);
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      const ms = String(d.getMilliseconds()).padStart(3, '0');
+      return `${mm}:${ss}.${ms}`;
+    };
+    // Generate initial time labels
+    const initialTimestamps = Array.from({length: DATA_POINTS}, (_, j) => Date.now() - (DATA_POINTS-j)*80);
+    const labels = initialTimestamps.map(getTimeLabel);
+    const datasets = Array.from({length: NUM_LINES}, (_, i) => ({
+      label: `Line ${i+1}`,
+      data: Array.from({length: DATA_POINTS}, () => BASE_OPS + (i * 2) + Math.random()*100 - 100),
+      borderColor: COLORS[i],
+      borderWidth: 0.25,
+      fill: false,
+      pointRadius: 0,
+      tension: 0.1,
+    }));
+    const ctx = document.getElementById('streamChart').getContext('2d');
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        animation: false,
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          x: {
+            type: 'category',
+            grid: { display: false },
+            ticks: {
+              color: '#e0e6f6',
+              autoSkip: true,
+              maxRotation: 0,
+              minRotation: 0,
+              maxTicksLimit: 4,
+              callback: function(val, idx, arr) {
+                // Show every 15th label for even fewer labels
+                return idx % 15 === 0 ? this.getLabelForValue(val) : '';
+              }
+            }
+          },
+          y: {
+            // 20% space either side of the lines
+            min: 4998000,
+            max: 5002000,
+            grid: { display: false },
+            ticks: {
+              color: '#e0e6f6',
+              maxTicksLimit: 3,
+              callback: v => {
+                // Show as 5.x M ops/sec
+                const millions = v / 1_000_000;
+                return `${millions.toFixed(3)}M ops/sec`;
+              }
+            }
+          }
+        }
+      }
+    });
+    function updateChart() {
+      const now = Date.now();
+      chart.data.labels.push(getTimeLabel(now));
+      if (chart.data.labels.length > DATA_POINTS) chart.data.labels.shift();
+      chart.data.datasets.forEach((ds, i) => {
+        ds.data.push(BASE_OPS + (i * 2) + Math.random()*200 - 100);
+        if (ds.data.length > DATA_POINTS) ds.data.shift();
+      });
+      chart.update('none');
+    }
+    setInterval(updateChart, 80);
+  </script>
+</body>
+</html>
