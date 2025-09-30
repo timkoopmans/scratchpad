@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ScyllaDB at AWS re:invent</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #fff;
+      background: #101828;
+    }
+    .hero-section {
+      position: relative;
+      width: 100vw;
+      height: 48vh;
+      min-height: 340px;
+      background:
+        linear-gradient(to bottom, rgba(11,25,46,0) 70%, rgb(12,23,45) 100%),
+        url('assets/Hero-background.webp') center center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    /* Restore video-section styles */
+    .video-section {
+      position: relative;
+      width: 100vw;
+      height: 48vh;
+      min-height: 340px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .video-bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    /* Overlay above video, not on top */
+    .overlay {
+      position: relative;
+      width: 100vw;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 1;
+      padding-top: 3vh;
+      padding-bottom: 3vh;
+    }
+    .overlay * {
+      text-shadow: 0 2px 8px rgba(10, 20, 40, 0.7);
+    }
+    .logo {
+      margin-bottom: 24px;
+      width: 90px;
+      height: auto;
+    }
+    h1 {
+      font-size: 3em;
+      margin: 0 0 24px 0;
+    }
+    .info {
+      font-size: 1.3em;
+      margin-bottom: 36px;
+    }
+    .btn {
+      background: #3ad6fc;
+      color: #222;
+      padding: 18px 40px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.25em;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background: #1bb6e0;
+    }
+    .icon {
+      margin-right: 8px;
+    }
+    /* New section styles */
+    .section {
+      max-width: 900px;
+      margin: 56px auto 0 auto;
+      background: #1a2332;
+      border-radius: 18px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+      padding: 48px 36px;
+      color: #fff;
+    }
+    .section h2 {
+      color: #3ad6fc;
+      font-size: 2.2em;
+      margin-bottom: 22px;
+    }
+    .section p {
+      font-size: 1.18em;
+      margin-bottom: 22px;
+    }
+    .register-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-top: 22px;
+    }
+    .register-form input, .register-form button {
+      padding: 14px;
+      font-size: 1.08em;
+      border-radius: 7px;
+      border: none;
+    }
+    .register-form input {
+      background: #222b3a;
+      color: #fff;
+      border: 1px solid #3ad6fc;
+    }
+    .register-form button {
+      background: #3ad6fc;
+      color: #222;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .register-form button:hover {
+      background: #1bb6e0;
+    }
+    @media (max-width: 700px) {
+      .section {
+        padding: 28px 8px;
+      }
+      .video-section {
+        min-height: 220px;
+        height: 36vh;
+      }
+      .overlay {
+        padding-top: 2vh;
+        padding-bottom: 2vh;
+      }
+      h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="hero-section">
+  <div class="overlay">
+    <img class="logo" src="assets/scylladb-logo-horizontal-white.svg" alt="ScyllaDB">
+    <img src="assets/reinvent.png" alt="AWS re:Invent" style="width:260px; height:auto; margin-bottom:24px;">
+    <div class="info">
+      <div><span class="icon">&#128101;</span> <span style="color:#3ad6fc;">Stop by to see us!</span></div>
+      <div><span class="icon">&#128205;</span> LAS VEGAS, NV</div>
+      <div><span class="icon">&#128197;</span> DECEMBER 1 – 5, 2025</div>
+    </div>
+    <button class="btn">Book a meeting</button>
+  </div>
+</div>
+<div class="video-section">
+  <video class="video-bg" src="assets/Basic_Comp.webm" autoplay loop muted playsinline></video>
+</div>
+<!-- New sections below -->
+<div class="section">
+  <h2>Register for Updates</h2>
+  <p>Be the first to know about ScyllaDB events, sessions, and exclusive offers at AWS re:Invent 2025.</p>
+  <form class="register-form">
+    <input type="text" placeholder="Full Name" required>
+    <input type="email" placeholder="Email Address" required>
+    <button type="submit">Register Now</button>
+  </form>
+</div>
+<div class="section">
+  <h2>Featured Speakers</h2>
+  <p>Hear from ScyllaDB experts and industry leaders on the future of high-performance databases.</p>
+  <ul>
+    <li><strong>Tim Koopmans</strong> – ScyllaDB Performance Architect</li>
+    <li><strong>Aviv Eyal</strong> – CTO, ScyllaDB</li>
+    <li><strong>Special Guest</strong> – AWS Solutions Architect</li>
+  </ul>
+</div>
+<div class="section">
+  <h2>Event Highlights</h2>
+  <p>Join us for hands-on demos, technical deep-dives, and networking opportunities with the ScyllaDB team.</p>
+  <ul>
+    <li>Live Benchmarking Sessions</li>
+    <li>Q&A with Database Experts</li>
+    <li>Exclusive Swag & Giveaways</li>
+  </ul>
+</div>
+</body>
+</html>
